@@ -25,10 +25,10 @@ from drf_yasg.views import get_schema_view
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Phone Authenticate API Documentation",
+        title="Referral System API Documentation",
         default_version='v1',
-        description="Documentation for phone number authentication"
-                    "and verify code.",
+        description="Documentation for simple referral system, "
+                    "phone number authentication and verify code.",
         terms_of_service="https://www.example.com/policies/terms/",
         contact=openapi.Contact(email="contact@example.com"),
         license=openapi.License(name="BSD License"),
