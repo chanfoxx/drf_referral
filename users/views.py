@@ -1,4 +1,5 @@
 from rest_framework import generics
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import views
 from rest_framework.response import Response
@@ -6,11 +7,12 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.settings import api_settings
 
 from users.models import User
-from users.permissions import IsOwner
+from users.permissions import IsOwner, IsSuperUser
 from users.serializers import (ReferralSerializer, ProfileSerializer,
-                               LoginSerializer, ValidateSerializer,)
+                               LoginSerializer, ValidateSerializer, )
 from users.services import get_verify_code, send_code_to_phone
 
 
@@ -34,8 +36,13 @@ class LoginApiView(views.APIView):
             )
             # Отправляем верификационный код на номер телефона.
             # WARNING! Twilio работает только с подтвержденными номерами телефонов.
-            # Проверить без API можно, закомментировав строчку ниже. (код просматривается в админке)
-            send_code_to_phone(user.phone_number, user.verify_code)
+            try:
+                send_code_to_phone(user.phone_number, user.verify_code)
+            except Exception as e:
+                return Response(
+                    data={'error': str(e), 'message': 'Посмотреть код в админке.'}
+                )
+
             user.save()
 
             return Response(
@@ -111,7 +118,7 @@ class ProfileApiView(generics.RetrieveUpdateAPIView):
     serializer_class = ProfileSerializer
     queryset = User.objects.all()
 
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwner, IsSuperUser]
 
 
 class ReferralApiView(generics.RetrieveUpdateAPIView):
@@ -120,7 +127,11 @@ class ReferralApiView(generics.RetrieveUpdateAPIView):
     serializer_class = ReferralSerializer
     queryset = User.objects.all()
 
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwner, IsSuperUser]
+
+    def perform_update(self, serializer):
+        if self.request.data:
+            raise MethodNotAllowed(method='put')
 
     def partial_update(self, request, *args, **kwargs):
         """ Ввод, проверка и установка кода приглашения. """
@@ -144,6 +155,6 @@ class ReferralApiView(generics.RetrieveUpdateAPIView):
                 )
             else:
                 return Response(
-                    {'error': 'Вы уже вводили код или код неверный.'},
+                    {'error': 'Код неверный.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
