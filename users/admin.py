@@ -19,7 +19,7 @@ class CustomUserAdmin(UserAdmin):
     # просмотра деталей пользователя.
     fieldsets = (
         ("Основные", {
-            "fields": ("phone_number", "invite_code", "referred_by", "city", "enter_code",)
+            "fields": ("phone_number", "invite_code", "referred_by", "city", "avatar", "enter_code",)
         }
          ),
         ("Права доступа", {
